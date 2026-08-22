@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oyun Laboratuvarı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090c12;
+    --panel: #11151f;
+    --panel-border: #1f2635;
+    --text: #cbd5e1;
+    --text-dim: #64748b;
+    --cyan: #22d3ee;
+    --amber: #fbbf24;
+    --green: #4ade80;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(34,211,238,0.06), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(251,191,36,0.05), transparent 40%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  /* --- terminal boot header --- */
+  .boot {
+    font-family: 'Space Mono', monospace;
+    color: var(--green);
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    min-height: 90px;
+  }
+  .boot .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green);
+    animation: blink 1s steps(1) infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+  }
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #f1f5f9;
+  }
+  h1 span { color: var(--cyan); }
+  .status-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .status-line .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    margin-right: 6px;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel), #0d1119);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent, var(--cyan)), transparent);
+    opacity: 0.8;
+  }
+  .card:hover {
+    border-color: var(--accent, var(--cyan));
+    transform: translateY(-3px);
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .card-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .card-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(74,222,128,0.1);
+    color: var(--green);
+    border: 1px solid rgba(74,222,128,0.3);
+  }
+  .card-icon {
+    font-size: 30px;
+    line-height: 1;
+  }
+  .card-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .card-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent, var(--cyan));
+    border: 1px solid currentColor;
+    padding: 2px 7px;
+    border-radius: 20px;
+    opacity: 0.85;
+  }
+  .card-play {
+    margin-top: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent, var(--cyan));
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-play::after { content: '→'; transition: transform 0.2s ease; }
+  .card:hover .card-play::after { transform: translateX(4px); }
+
+  /* empty slot */
+  .card.empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-style: dashed;
+    color: var(--text-dim);
+    cursor: default;
+  }
+  .card.empty:hover { transform: none; border-color: var(--panel-border); }
+  .card.empty .card-icon { opacity: 0.3; }
+
+  footer {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid var(--panel-border);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="boot" id="boot"></div>
+
+  <header>
+    <h1>OYUN<span>_</span>LABORATUVARI</h1>
+    <div class="status-line"><span class="dot"></span>SİSTEM AKTİF — <span id="gameCount">1</span> MODÜL YÜKLÜ</div>
+  </header>
+
+  <div class="section-label">// Modüller</div>
+  <div class="grid" id="gameGrid"></div>
+
+  <footer>
+    ARŞİV — yeni bir oyun eklemek için gameGrid dizisine yeni bir kayıt ekle
+  </footer>
+</div>
+
+<script>
+// Buraya yeni oyun eklemek çok kolay: her oyun bir obje.
+// href: oyun dosyasının yolu (aynı klasörde olmalı)
+// accent: kart rengi (cyan / amber / green gibi CSS değişkeni adı ya da hex)
+const games = [
+  {
+    id: '01',
+    icon: '🚀',
+    title: 'YILDIZ AVCISI',
+    desc: 'Uzay temalı hayatta kalma oyunu. Dalga dalga gelen düşmanlara karşı gemini yönet, seviye atla, güçlen.',
+    tags: ['aksiyon', 'hayatta kalma', 'uzay'],
+    href: 'uzay-hayatta-kalma.html',
+    accent: '#22d3ee'
+  },
+  {
+    id: '02',
+    icon: '🕯️',
+    title: 'RAVENWOOD MALİKANESİ',
+    desc: 'Viktorya dönemi cinayet gizemi. Sırayla oynanan çok oyunculu çıkarım oyunu: ipucu topla, öner, çürüt, doğru suçlamayı yap.',
+    tags: ['çıkarım', 'çok oyunculu', 'gizem'],
+    href: 'ravenwood-cinayeti.html',
+    accent: '#c9a227'
+  }
+  // { id: '03', icon: '🧩', title: 'YENİ OYUN', desc: '...', tags: [], href: 'dosya.html', accent: '#fbbf24' },
+];
+
+const grid = document.getElementById('gameGrid');
+document.getElementById('gameCount').textContent = games.length;
+
+games.forEach(g => {
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = g.href;
+  a.style.setProperty('--accent', g.accent || '#22d3ee');
+  a.innerHTML = `
+    <div class="card-top">
+      <span class="card-id">MOD-${g.id}</span>
+      <span class="card-status">● ÇALIŞIYOR</span>
+    </div>
+    <div class="card-icon">${g.icon}</div>
+    <div class="card-title">${g.title}</div>
+    <div class="card-desc">${g.desc}</div>
+    <div class="card-tags">${g.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    <div class="card-play">OYNA</div>
+  `;
+  grid.appendChild(a);
+});
+
+// boş yuva kartı (gelecekte eklenecek oyun için ipucu)
+const empty = document.createElement('div');
+empty.className = 'card empty';
+empty.innerHTML = `<div class="card-icon">+</div><div class="card-desc">Sıradaki oyun burada görünecek</div>`;
+grid.appendChild(empty);
+
+// --- terminal boot animasyonu ---
+const bootLines = [
+  'SİSTEM BAŞLATILIYOR...',
+  `MODÜLLER TARANIYOR... ${games.length} OYUN BULUNDU`,
+  'HAZIR.'
+];
+const bootEl = document.getElementById('boot');
+let lineIdx = 0, charIdx = 0;
+function typeBoot() {
+  if (lineIdx >= bootLines.length) {
+    bootEl.innerHTML += '<span class="cursor"></span>';
+    return;
+  }
+  const line = bootLines[lineIdx];
+  if (charIdx <= line.length) {
+    bootEl.innerHTML = bootLines.slice(0, lineIdx).map(l => l + '<br>').join('') + line.slice(0, charIdx);
+    charIdx++;
+    setTimeout(typeBoot, 18);
+  } else {
+    lineIdx++;
+    charIdx = 0;
+    setTimeout(typeBoot, 200);
+  }
+}
+typeBoot();
+</script>
+</body>
+</html>

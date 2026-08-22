@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ravenwood Malikanesi - Bir Cinayet Gizemi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1b120c;
+    --panel: #2a1c12;
+    --panel-light: #352517;
+    --gold: #c9a227;
+    --gold-dim: #8a6f22;
+    --parchment: #f0e4c8;
+    --parchment-dark: #d9c79f;
+    --blood: #7a1f1f;
+    --text: #e8dcc0;
+    --text-dim: #b3a583;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: radial-gradient(ellipse at 50% 0%, #2a1c12, #140d08 70%);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    min-height: 100vh;
+    padding: 20px 14px 60px;
+  }
+  h1,h2,h3,.display { font-family: 'Playfair Display', serif; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  .titlebar { text-align:center; margin-bottom: 22px; }
+  .titlebar h1 { font-size: clamp(24px,5vw,36px); color: var(--gold); letter-spacing:1px; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+  .titlebar p { color: var(--text-dim); font-style: italic; margin-top:4px; }
+
+  .panel {
+    background: linear-gradient(180deg, var(--panel), #1e140d);
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  .center { text-align:center; }
+  .muted { color: var(--text-dim); font-size: 14px; }
+
+  button {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    background: linear-gradient(180deg, var(--gold), #8a6f22);
+    color: #241708;
+    border: none;
+    padding: 10px 22px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform .1s ease, filter .1s ease;
+    letter-spacing: 0.5px;
+  }
+  button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  button:active { transform: translateY(0); }
+  button.secondary {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform:none; }
+  select, input[type=text] {
+    font-family: 'Cormorant Garamond', serif;
+    background: var(--panel-light);
+    color: var(--text);
+    border: 1px solid var(--gold-dim);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 15px;
+  }
+  label { font-size: 13px; color: var(--text-dim); display:block; margin-bottom:4px; letter-spacing:0.5px; text-transform:uppercase; }
+
+  /* -------- setup -------- */
+  .playerCountRow { display:flex; gap:8px; justify-content:center; margin: 14px 0 20px; flex-wrap:wrap; }
+  .countBtn {
+    width: 46px; height: 46px; border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 18px; font-weight:700;
+    background: var(--panel-light); color: var(--text);
+    border: 1px solid var(--gold-dim); cursor:pointer;
+  }
+  .countBtn.active { background: var(--gold); color:#241708; }
+  .nameRow { display:flex; align-items:center; gap:12px; margin-bottom:10px; padding:8px; background:var(--panel-light); border-radius:6px; }
+  .charDot { width:26px; height:26px; border-radius:50%; flex-shrink:0; border:2px solid rgba(255,255,255,0.3); }
+  .nameRow input { flex:1; }
+  .nameRow .charName { font-size:13px; color:var(--text-dim); width:120px; }
+
+  /* -------- pass device barrier -------- */
+  .barrier {
+    position: fixed; inset:0; background: rgba(10,6,3,0.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index: 100; text-align:center; padding:20px; gap:16px;
+  }
+  .barrier .icon { font-size: 46px; }
+  .barrier h2 { color: var(--gold); font-size: clamp(20px,5vw,28px); }
+  .barrier .charBadge { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; background:var(--panel); border:1px solid var(--gold-dim); border-radius:30px; }
+
+  /* -------- board -------- */
+  .boardArea { display:flex; gap:16px; flex-wrap:wrap; }
+  .boardGrid {
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 1/1;
+    margin: 0 auto;
+  }
+  .cell {
+    border-radius: 5px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position: relative;
+    font-size: 10px;
+    text-align:center;
+    overflow: hidden;
+  }
+  .cell.room {
+    background: linear-gradient(160deg, #3a2a1a, #241708);
+    border: 1px solid var(--gold-dim);
+    color: var(--parchment);
+    padding: 3px;
+  }
+  .cell.room .rname { font-family:'Playfair Display',serif; font-size: clamp(8px,1.6vw,11px); line-height:1.15; }
+  .cell.hall {
+    background: #14100b;
+    border: 1px solid #2a2015;
+  }
+  .cell.blank { background: transparent; }
+  .cell.reachable { outline: 2px solid var(--gold); cursor:pointer; box-shadow: 0 0 10px rgba(201,162,39,0.6); }
+  .cell.current { outline: 2px solid #e8dcc0; }
+  .secretIcon { position:absolute; top:2px; right:3px; font-size:10px; }
+  .tokenRow { display:flex; flex-wrap:wrap; gap:2px; justify-content:center; margin-top:2px; }
+  .token {
+    width:14px; height:14px; border-radius:50%;
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+
+  .sidePanel { flex:1; min-width: 240px; }
+  .infoRow { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:14px;}
+  .diceDisplay { font-size: 30px; text-align:center; margin: 10px 0; letter-spacing: 8px; }
+  .actionBtns { display:flex; flex-direction:column; gap:8px; margin-top: 10px; }
+
+  .log { max-height: 180px; overflow-y:auto; font-size: 13px; color: var(--text-dim); display:flex; flex-direction:column; gap:4px; }
+  .log div { border-bottom: 1px dashed rgba(200,180,120,0.15); padding-bottom:4px; }
+  .log div.important { color: var(--gold); }
+
+  .cardsRow { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .card {
+    background: var(--parchment);
+    color: #241708;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    min-width: 90px;
+    text-align:center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    border: 1px solid var(--parchment-dark);
+    font-family: 'Playfair Display', serif;
+  }
+  .card .kind { font-size:10px; text-transform:uppercase; color:#7a5a2a; letter-spacing:1px; }
+
+  .modalOverlay {
+    position: fixed; inset:0; background: rgba(10,6,3,0.9);
+    display:flex; align-items:center; justify-content:center; z-index: 90; padding:16px;
+  }
+  .modalBox {
+    background: var(--panel); border:1px solid var(--gold-dim); border-radius:10px;
+    padding: 22px; max-width: 420px; width:100%; max-height: 85vh; overflow-y:auto;
+  }
+  .modalBox h2 { color: var(--gold); margin-bottom: 14px; text-align:center; }
+  .fieldGroup { margin-bottom: 14px; }
+  .fieldGroup select { width:100%; }
+
+  .revealCard {
+    background: var(--parchment); color:#241708; border-radius:10px; padding: 26px;
+    text-align:center; font-family:'Playfair Display',serif; font-size: 20px;
+    box-shadow: 0 0 30px rgba(201,162,39,0.4);
+    margin: 16px 0;
+  }
+
+  .choiceGrid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin: 14px 0; }
+  .choiceGrid button { flex:1; min-width:120px; }
+
+  .startScreen p.lead { color:var(--text-dim); line-height:1.6; margin-bottom: 14px; }
+  ul.rules { margin: 10px 0 10px 20px; color: var(--text-dim); line-height:1.7; font-size:14px;}
+  ul.rules li { margin-bottom:4px; }
+
+  #hidden { display:none !important; }
+
+  .notesGrid { width:100%; border-collapse: collapse; font-size: 12px; }
+  .notesGrid th, .notesGrid td { border: 1px solid var(--gold-dim); padding: 4px; text-align:center; }
+  .notesGrid th { color: var(--gold); font-weight:600; font-size: 11px; }
+  .notesGrid td.label { text-align:left; color: var(--text-dim); font-size:11px; white-space:nowrap; }
+  .notesGrid td.cell { cursor:pointer; width: 26px; height:26px; color: var(--parchment); font-weight:700; }
+  .notesGrid td.cell:hover { background: rgba(201,162,39,0.15); }
+
+  @media (max-width: 640px) {
+    .boardArea { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="titlebar">
+    <h1>🕯️ RAVENWOOD MALİKANESİ 🕯️</h1>
+    <p>Bir gece, bir cinayet, altı şüpheli...</p>
+  </div>
+
+  <div id="app"></div>
+</div>
+
+<script>
+/* ======================= VERİ TANIMLARI ======================= */
+
+const CHARACTERS = [
+  { id:'ravenwood', name:'Leydi Ravenwood', color:'#b91c1c', start:'H_kutuphane_galeri' },
+  { id:'graves',     name:'Albay Graves',     color:'#1e3a8a', start:'H_galeri_kis' },
+  { id:'winslow',    name:'Doktor Winslow',   color:'#15803d', start:'H_kis_mahzen' },
+  { id:'ashford',    name:'Bayan Ashford',    color:'#7e22ce', start:'H_mahzen_mutfak' },
+  { id:'crowley',    name:'Baron Crowley',    color:'#b45309', start:'H_calisma_solen' },
+  { id:'noire',      name:'Matmazel Noire',   color:'#4b5563', start:'H_kutuphane_silah' },
+];
+
+const WEAPONS = [
+  { id:'hancer',  name:'Hançer',        icon:'🗡️' },
+  { id:'kadeh',   name:'Zehirli Kadeh', icon:'🍷' },
+  { id:'tufek',   name:'Av Tüfeği',     icon:'🔫' },
+  { id:'bust',    name:'Mermer Büst',   icon:'🗿' },
+  { id:'ip',      name:'Boğma İpi',     icon:'🪢' },
+  { id:'kilic',   name:'Antika Kılıç',  icon:'⚔️' },
+];
+
+const ROOMS = [
+  { id:'R_kutuphane', name:'Kütüphane',       row:0, col:0, secretTo:'R_mutfak' },
+  { id:'R_galeri',    name:'Resim Galerisi',  row:0, col:2, secretTo:null },
+  { id:'R_kis',       name:'Kış Bahçesi',     row:0, col:4, secretTo:'R_calisma' },
+  { id:'R_silah',     name:'Silah Odası',     row:2, col:0, secretTo:null },
+  { id:'R_rasat',     name:'Rasathane',       row:2, col:2, secretTo:null },
+  { id:'R_mahzen',    name:'Mahzen',          row:2, col:4, secretTo:null },
+  { id:'R_calisma',   name:'Çalışma Odası',   row:4, col:0, secretTo:'R_kis' },
+  { id:'R_solen',     name:'Şölen Salonu',    row:4, col:2, secretTo:null },
+  { id:'R_mutfak',    name:'Mutfak',          row:4, col:4, secretTo:'R_kutuphane' },
+];
+
+const HALLS = [
+  { id:'H_kutuphane_galeri', row:0, col:1, a:'R_kutuphane', b:'R_galeri' },
+  { id:'H_galeri_kis',       row:0, col:3, a:'R_galeri',    b:'R_kis' },
+  { id:'H_kutuphane_silah',  row:1, col:0, a:'R_kutuphane', b:'R_silah' },
+  { id:'H_galeri_rasat',     row:1, col:2, a:'R_galeri',    b:'R_rasat' },
+  { id:'H_kis_mahzen',       row:1, col:4, a:'R_kis',       b:'R_mahzen' },
+  { id:'H_silah_rasat',      row:2, col:1, a:'R_silah',     b:'R_rasat' },
+  { id:'H_rasat_mahzen',     row:2, col:3, a:'R_rasat',     b:'R_mahzen' },
+  { id:'H_silah_calisma',    row:3, col:0, a:'R_silah',     b:'R_calisma' },
+  { id:'H_rasat_solen',      row:3, col:2, a:'R_rasat',     b:'R_solen' },
+  { id:'H_mahzen_mutfak',    row:3, col:4, a:'R_mahzen',    b:'R_mutfak' },
+  { id:'H_calisma_solen',    row:4, col:1, a:'R_calisma',   b:'R_solen' },
+  { id:'H_solen_mutfak',     row:4, col:3, a:'R_solen',     b:'R_mutfak' },
+];
+
+// düğüm haritası (rooms + halls birleşik graf)
+const NODES = {};
+ROOMS.forEach(r => NODES[r.id] = { ...r, type:'room', connects: [] });
+HALLS.forEach(h => NODES[h.id] = { ...h, type:'hall', connects: [h.a, h.b] });
+HALLS.forEach(h => { NODES[h.a].connects.push(h.id); NODES[h.b].connects.push(h.id); });
+
+function roomName(id) { return ROOMS.find(r=>r.id===id)?.name || id; }
+function weaponName(id) { return WEAPONS.find(w=>w.id===id)?.name || id; }
+function charName(id) { return CHARACTERS.find(c=>c.id===id)?.name || id; }
+function weaponIcon(id) { return WEAPONS.find(w=>w.id===id)?.icon || '❔'; }
+
+/* ======================= OYUN DURUMU ======================= */
+
+let G = null; // ana state objesi
+
+function freshGame(playerCount, playerNames) {
+  const chosenChars = CHARACTERS.slice(0, playerCount);
+  const players = chosenChars.map((c,i) => ({
+    idx: i,
+    name: playerNames[i] || c.name,
+    character: c.id,
+    color: c.color,
+    node: c.start,
+    hand: [],
+    eliminated: false,
+    notes: {} // key -> 'yok' | 'var' | ''
+  }));
+
+  // kart destesi
+  let suspectCards = CHARACTERS.map(c=>({type:'suspect', id:c.id}));
+  let weaponCards = WEAPONS.map(w=>({type:'weapon', id:w.id}));
+  let roomCards = ROOMS.map(r=>({type:'room', id:r.id}));
+
+  function pick(arr){ return arr.splice(Math.floor(Math.random()*arr.length),1)[0]; }
+  const solution = { suspect: pick(suspectCards), weapon: pick(weaponCards), room: pick(roomCards) };
+
+  let deck = [...suspectCards, ...weaponCards, ...roomCards];
+  // karıştır
+  for (let i=deck.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  deck.forEach((card, i) => { players[i % players.length].hand.push(card); });
+
+  return {
+    players,
+    solution,
+    currentPlayerIndex: 0,
+    turnPhase: 'barrier-turn-start', // barrier-turn-start, action, moving
+    diceRemaining: 0,
+    diceRolled: null,
+    hasMovedThisTurn: false,
+    log: [{ text: 'Malikanede karanlık bir gece başlıyor... Zarf mühürlendi.', important:true }],
+    winner: null,
+    gameOver: false,
+    pendingSuggestion: null, // {room, suspect, weapon, askerIdx, refuterQueue, refuterIdx, foundRefuterIdx, matchingCards}
+    screen: 'barrier-turn-start', // genel ekran durumu
+    barrierNext: null, // barrier kapandığında çağrılacak fonksiyon adı (render tarafından yönetilir)
+    handRevealIndex: 0, // setup sırasında el gösterme sırası
+  };
+}
+
+function currentPlayer() { return G.players[G.currentPlayerIndex]; }
+
+function log(text, important) { G.log.unshift({text, important: !!important}); render(); }
+
+/* ======================= HAREKET MANTIĞI ======================= */
+
+function reachableNodes(fromId, steps) {
+  // BFS ile tam olarak 'steps' adım kalan tüm hücreler değil; adım adım oyuncu tıklayarak ilerleyecek
+  // burada sadece 1 adımlık komşuları döneriz (oyuncu tek tek tıklar)
+  return NODES[fromId].connects;
+}
+
+function moveTo(nodeId) {
+  const p = currentPlayer();
+  p.node = nodeId;
+  G.diceRemaining -= 1;
+  G.hasMovedThisTurn = true;
+  const node = NODES[nodeId];
+  if (node.type === 'room') {
+    G.diceRemaining = 0; // odaya girince hareket biter
+    log(`${p.name} (${charName(p.character)}) ${node.name}'e girdi.`);
+  } else {
+    log(`${p.name} koridorda ilerledi.`);
+  }
+  render();
+}
+
+function useSecretPassage() {
+  const p = currentPlayer();
+  const node = NODES[p.node];
+  if (node.type !== 'room' || !node.secretTo) return;
+  p.node = node.secretTo;
+  G.diceRemaining = 0;
+  G.hasMovedThisTurn = true;
+  log(`${p.name} gizli geçidi kullanarak ${roomName(node.secretTo)}'e geçti!`, true);
+  render();
+}
+
+function rollDice() {
+  const d1 = 1+Math.floor(Math.random()*6);
+  const d2 = 1+Math.floor(Math.random()*6);
+  G.diceRolled = [d1,d2];
+  G.diceRemaining = d1+d2;
+  render();
+}
+
+function endMovementEarly() {
+  G.diceRemaining = 0;
+  render();
+}
+
+/* ======================= ÖNERİ / ÇÜRÜTME ======================= */
+
+function openSuggestion() {
+  G.screen = 'suggestion-modal';
+  render();
+}
+
+function submitSuggestion(suspectId, weaponId) {
+  const p = currentPlayer();
+  const roomId = p.node;
+  // önerilen şüpheliyi bu odaya ışınla
+  const suspectPlayer = null;
+  CHARACTERS.forEach(()=>{});
+  // token'ı taşımak için: eğer bu karakteri kontrol eden bir oyuncu varsa onun node'unu güncelle
+  const controllingPlayer = G.players.find(pl => pl.character === suspectId);
+  if (controllingPlayer) controllingPlayer.node = roomId;
+
+  log(`${p.name}, ${roomName(roomId)}'de "${charName(suspectId)}, ${weaponName(weaponId)} ile" önerisinde bulundu.`, true);
+
+  // çürütme sırası: sıradaki oyuncudan başlayarak (kendisi hariç herkes, elenmiş olsa da eli sayılır)
+  const order = [];
+  for (let i=1;i<G.players.length;i++) {
+    order.push((G.currentPlayerIndex+i) % G.players.length);
+  }
+
+  G.pendingSuggestion = {
+    room: roomId, suspect: suspectId, weapon: weaponId,
+    askerIdx: G.currentPlayerIndex,
+    refuterQueue: order,
+    queuePos: 0,
+    resolved: false
+  };
+  G.screen = 'board';
+  advanceRefuteQueue();
+}
+
+function advanceRefuteQueue() {
+  const s = G.pendingSuggestion;
+  if (!s) return;
+  if (s.queuePos >= s.refuterQueue.length) {
+    // kimse çürütemedi
+    log('Hiç kimse bu öneriyi çürütemedi! Bu önemli bir ipucu olabilir...', true);
+    G.pendingSuggestion = null;
+    G.screen = 'board';
+    render();
+    return;
+  }
+  const pIdx = s.refuterQueue[s.queuePos];
+  const player = G.players[pIdx];
+  const matches = player.hand.filter(c =>
+    (c.type==='suspect' && c.id===s.suspect) ||
+    (c.type==='weapon' && c.id===s.weapon) ||
+    (c.type==='room' && c.id===s.room)
+  );
+  if (matches.length > 0) {
+    s.currentResponderIdx = pIdx;
+    s.matches = matches;
+    G.screen = 'barrier-refute';
+    G.barrierFor = pIdx;
+    render();
+  } else {
+    s.queuePos++;
+    advanceRefuteQueue();
+  }
+}
+
+function chooseRefuteCard(card) {
+  const s = G.pendingSuggestion;
+  s.chosenCard = card;
+  G.screen = 'barrier-refute-back';
+  G.barrierFor = s.askerIdx;
+  render();
+}
+
+function finishRefuteReveal() {
+  const s = G.pendingSuggestion;
+  const asker = G.players[s.askerIdx];
+  const responder = G.players[s.currentResponderIdx];
+  log(`${responder.name}, ${asker.name}'in önerisini özel olarak çürüttü.`);
+  G.pendingSuggestion = null;
+  G.screen = 'board';
+  render();
+}
+
+/* ======================= SUÇLAMA ======================= */
+
+function openAccusation() {
+  G.screen = 'accusation-modal';
+  render();
+}
+
+function submitAccusation(suspectId, weaponId, roomId) {
+  const p = currentPlayer();
+  const correct = suspectId === G.solution.suspect.id && weaponId === G.solution.weapon.id && roomId === G.solution.room.id;
+  if (correct) {
+    G.winner = p;
+    G.gameOver = true;
+    log(`${p.name} doğru suçlamayı yaptı ve gizemi çözdü!`, true);
+    G.screen = 'gameover';
+    render();
+  } else {
+    p.eliminated = true;
+    log(`${p.name} bir suçlamada bulundu ama YANILDI. Artık hamle yapamayacak (ama ipucu vermeye devam edecek).`, true);
+    const activeLeft = G.players.filter(pl => !pl.eliminated);
+    if (activeLeft.length === 0) {
+      G.gameOver = true;
+      G.winner = null;
+      G.screen = 'gameover';
+      render();
+    } else {
+      G.screen = 'board';
+      endTurn();
+    }
+  }
+}
+
+/* ======================= TUR YÖNETİMİ ======================= */
+
+function endTurn() {
+  G.diceRemaining = 0;
+  G.diceRolled = null;
+  G.hasMovedThisTurn = false;
+  let next = G.currentPlayerIndex;
+  do {
+    next = (next+1) % G.players.length;
+  } while (G.players[next].eliminated && G.players.some(pl=>!pl.eliminated));
+  G.currentPlayerIndex = next;
+  G.screen = 'barrier-turn-start';
+  render();
+}
+
+/* ======================= RENDER ======================= */
+
+const app = document.getElementById('app');
+
+function render() {
+  if (!G) { renderSetup(); return; }
+  if (G.screen === 'barrier-turn-start') { renderTurnStartBarrier(); return; }
+  if (G.screen === 'barrier-refute') { renderRefuteBarrier(); return; }
+  if (G.screen === 'barrier-refute-back') { renderRefuteBackBarrier(); return; }
+  if (G.screen === 'suggestion-modal') { renderBoard(); renderSuggestionModal(); return; }
+  if (G.screen === 'accusation-modal') { renderBoard(); renderAccusationModal(); return; }
+  if (G.screen === 'gameover') { renderGameOver(); return; }
+  renderBoard();
+}
+
+/* ---- setup ekranı ---- */
+let setupCount = 4;
+let setupNames = ['','','','','',''];
+
+function renderSetup() {
+  app.innerHTML = `
+    <div class="panel startScreen">
+      <h2 style="color:var(--gold); margin-bottom:8px;">Gizem Başlıyor</h2>
+      <p class="lead">Bir gece, Ravenwood Malikanesi'nin sahibi ölü bulundu. Altı konuktan biri, iki silahtan biriyle, dokuz odadan birinde bu cinayeti işledi. Sırayla ilerleyin, odalara girin, önerilerde bulunun, diğer oyuncuların elindeki kartlardan ipucu toplayın ve doğru üçlüyü — şüpheli, silah, oda — ilk siz bulun!</p>
+      <ul class="rules">
+        <li>Her oyuncu bir karakteri canlandırır, sırayla zar atıp hareket eder.</li>
+        <li>Bir odaya girince "öneride bulun": bir şüpheli + bir silah söylersin (oda = bulunduğun oda).</li>
+        <li>Sıradaki oyuncular elinde eşleşen bir kart varsa özel olarak sana gösterir.</li>
+        <li>Cihazı sıradaki oyuncuya verirken ekrandaki uyarıları takip edin — bilgiler gizlidir!</li>
+        <li>Emin olduğunda "Suçlama Yap" ile şüpheli+silah+oda tahmininde bulun. Doğruysan kazanırsın, yanlışsan oyundan elenirsin (ama ipucu vermeye devam edersin).</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3 style="color:var(--gold); text-align:center; margin-bottom:6px;">Kaç Kişi Oynuyorsunuz?</h3>
+      <div class="playerCountRow">
+        ${[3,4,5,6].map(n => `<div class="countBtn ${n===setupCount?'active':''}" data-count="${n}">${n}</div>`).join('')}
+      </div>
+
+      <h3 style="color:var(--gold); margin-bottom:10px;">Oyuncular</h3>
+      ${CHARACTERS.slice(0,setupCount).map((c,i) => `
+        <div class="nameRow">
+          <div class="charDot" style="background:${c.color}"></div>
+          <div class="charName">${c.name}</div>
+          <input type="text" placeholder="Oyuncu adı (boş bırakılırsa karakter adı kullanılır)" data-idx="${i}" value="${setupNames[i]||''}" />
+        </div>
+      `).join('')}
+
+      <div class="center" style="margin-top:16px;">
+        <button id="beginBtn">Oyunu Başlat</button>
+      </div>
+    </div>
+  `;
+
+  app.querySelectorAll('.countBtn').forEach(el => {
+    el.onclick = () => { setupCount = parseInt(el.dataset.count); render(); };
+  });
+  app.querySelectorAll('.nameRow input').forEach(el => {
+    el.oninput = () => { setupNames[parseInt(el.dataset.idx)] = el.value; };
+  });
+  document.getElementById('beginBtn').onclick = () => {
+    G = freshGame(setupCount, setupNames);
+    G.screen = 'reveal-hand';
+    G.handRevealIndex = 0;
+    render();
+  };
+
+  if (G === null && document.getElementById('revealFlow')) return;
+  if (G && G.screen === 'reveal-hand') renderHandReveal();
+}
+
+/* ---- oyun başında elleri gösterme ---- */
+function renderHandReveal() {
+  const p = G.players[G.handRevealIndex];
+  app.innerHTML = `
+    <div class="barrier" style="position:static; background:transparent;">
+      <div class="icon">🎴</div>
+      <h2>Cihazı <span style="color:${p.color}">${p.name}</span>'e verin</h2>
+      <div class="charBadge"><div class="charDot" style="background:${p.color}"></div> ${charName(p.character)}</div>
+      <p class="muted">Diğer oyuncular bakmasın. Hazır olduğunuzda elinizi görün.</p>
+      <button id="showHandBtn">Elimi Göster</button>
+    </div>
+  `;
+  document.getElementById('showHandBtn').onclick = () => {
+    app.innerHTML = `
+      <div class="barrier" style="position:static; background:transparent;">
+        <h2 style="color:${p.color}">${p.name}, elindeki kartlar:</h2>
+        <div class="cardsRow center" style="justify-content:center;">
+          ${p.hand.map(c => renderCardHTML(c)).join('')}
+        </div>
+        <p class="muted" style="max-width:360px;">Bu kartları unutmayın — zarftaki gizli kombinasyonda bunlar YOK demektir.</p>
+        <button id="hideHandBtn">Ezberledim, Gizle ve Devam Et</button>
+      </div>
+    `;
+    document.getElementById('hideHandBtn').onclick = () => {
+      G.handRevealIndex++;
+      if (G.handRevealIndex >= G.players.length) {
+        G.screen = 'barrier-turn-start';
+      }
+      render();
+    };
+  };
+}
+
+function renderCardHTML(c) {
+  let label, kind;
+  if (c.type==='suspect') { label = charName(c.id); kind='Şüpheli'; }
+  else if (c.type==='weapon') { label = weaponIcon(c.id)+' '+weaponName(c.id); kind='Silah'; }
+  else { label = roomName(c.id); kind='Oda'; }
+  return `<div class="card"><div class="kind">${kind}</div>${label}</div>`;
+}
+
+/* ---- tur başı bariyeri ---- */
+function renderTurnStartBarrier() {
+  const p = currentPlayer();
+  if (p.eliminated) {
+    // otomatik atla ama kısa bilgi göster
+    app.innerHTML = `
+      <div class="barrier" style="position:static; background:transparent;">
+        <div class="icon">⛔</div>
+        <h2>${p.name} elendi, sırası atlanıyor...</h2>
+        <button id="skipBtn">Devam</button>
+      </div>
+    `;
+    document.getElementById('skipBtn').onclick = () => { endTurn(); };
+    return;
+  }
+  app.innerHTML = `
+    <div class="barrier" style="position:static; background:transparent;">
+      <div class="icon">🔔</div>
+      <h2>Sıra: <span style="color:${p.color}">${p.name}</span></h2>
+      <div class="charBadge"><div class="charDot" style="background:${p.color}"></div> ${charName(p.character)}</div>
+      <p class="muted">Cihazı bu oyuncuya verin.</p>
+      <button id="readyBtn">Hazırım</button>
+    </div>
+  `;
+  document.getElementById('readyBtn').onclick = () => { G.screen = 'board'; render(); };
+}
+
+/* ---- çürütme bariyerleri ---- */
+function renderRefuteBarrier() {
+  const s = G.pendingSuggestion;
+  const responder = G.players[s.currentResponderIdx];
+  app.innerHTML = `
+    <div class="barrier" style="position:static; background:transparent;">
+      <div class="icon">🤫</div>
+      <h2>Cihazı <span style="color:${responder.color}">${responder.name}</span>'e verin</h2>
+      <p class="muted">Önerilen: ${charName(s.suspect)} — ${weaponName(s.weapon)} — ${roomName(s.room)}<br>Bu üçlüden birine sahipsiniz. Birini gizlice göstereceksiniz.</p>
+      <button id="readyRefuteBtn">Hazırım</button>
+    </div>
+  `;
+  document.getElementById('readyRefuteBtn').onclick = () => {
+    app.innerHTML = `
+      <div class="barrier" style="position:static; background:transparent;">
+        <h2>Göstermek için bir kart seçin:</h2>
+        <div class="choiceGrid">
+          ${s.matches.map((c,i) => `<button data-i="${i}">${renderCardShort(c)}</button>`).join('')}
+        </div>
+        <p class="muted">Sadece birini seçmeniz yeterli.</p>
+      </div>
+    `;
+    app.querySelectorAll('.choiceGrid button').forEach(btn => {
+      btn.onclick = () => chooseRefuteCard(s.matches[parseInt(btn.dataset.i)]);
+    });
+  };
+}
+function renderCardShort(c) {
+  if (c.type==='suspect') return charName(c.id);
+  if (c.type==='weapon') return weaponIcon(c.id)+' '+weaponName(c.id);
+  return roomName(c.id);
+}
+
+function renderRefuteBackBarrier() {
+  const s = G.pendingSuggestion;
+  const asker = G.players[s.askerIdx];
+  app.innerHTML = `
+    <div class="barrier" style="position:static; background:transparent;">
+      <div class="icon">↩️</div>
+      <h2>Cihazı <span style="color:${asker.color}">${asker.name}</span>'e geri verin</h2>
+      <p class="muted">Size özel olarak bir kart gösterilecek.</p>
+      <button id="readyBackBtn">Hazırım</button>
+    </div>
+  `;
+  document.getElementById('readyBackBtn').onclick = () => {
+    app.innerHTML = `
+      <div class="barrier" style="position:static; background:transparent;">
+        <h2>Size gösterilen kart:</h2>
+        <div class="revealCard">${renderCardShort(s.chosenCard)}</div>
+        <button id="hideBackBtn">Gizle ve Devam Et</button>
+      </div>
+    `;
+    document.getElementById('hideBackBtn').onclick = () => finishRefuteReveal();
+  };
+}
+
+/* ---- ana tahta ekranı ---- */
+function renderBoard() {
+  const p = currentPlayer();
+  const node = NODES[p.node];
+  const reachable = G.diceRemaining > 0 ? reachableNodes(p.node, G.diceRemaining) : [];
+
+  let grid = '';
+  for (let r=0;r<5;r++) {
+    for (let c=0;c<5;c++) {
+      const found = Object.values(NODES).find(n => n.row===r && n.col===c);
+      if (!found) { grid += `<div class="cell blank"></div>`; continue; }
+      const isReach = reachable.includes(found.id);
+      const isCurrent = found.id === p.node;
+      const occupants = G.players.filter(pl => pl.node === found.id);
+      const cls = found.type==='room' ? 'room' : 'hall';
+      grid += `<div class="cell ${cls} ${isReach?'reachable':''} ${isCurrent?'current':''}" data-node="${found.id}">
+        ${found.type==='room' ? `<div class="rname">${found.name}</div>${found.secretTo ? '<div class="secretIcon">🌀</div>' : ''}` : ''}
+        <div class="tokenRow">
+          ${occupants.map(o => `<div class="token" style="background:${o.color}" title="${o.name}"></div>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+
+  const canSuggest = node.type === 'room' && !p.eliminated;
+  const canSecret = node.type === 'room' && node.secretTo && !G.hasMovedThisTurn && !p.eliminated && G.diceRolled===null;
+  const canRoll = !p.eliminated && G.diceRolled===null;
+  const canEndTurn = !p.eliminated;
+
+  app.innerHTML = `
+    <div class="panel">
+      <div class="infoRow">
+        <div><strong style="color:${p.color}">${p.name}</strong> <span class="muted">(${charName(p.character)})</span></div>
+        <div class="muted">${node.type==='room' ? node.name : 'Koridorda'}</div>
+      </div>
+
+      <div class="boardArea">
+        <div class="boardGrid" id="boardGrid">${grid}</div>
+
+        <div class="sidePanel">
+          ${G.diceRolled ? `<div class="diceDisplay">🎲${G.diceRolled[0]} 🎲${G.diceRolled[1]}</div><div class="center muted">Kalan hareket: ${G.diceRemaining}</div>` : `<div class="center muted" style="padding:20px 0;">Zar atmayı bekliyor...</div>`}
+
+          <div class="actionBtns">
+            ${canRoll ? `<button id="rollBtn">🎲 Zar At</button>` : ''}
+            ${canSecret ? `<button id="secretBtn" class="secondary">🌀 Gizli Geçit: ${roomName(node.secretTo)}</button>` : ''}
+            ${G.diceRemaining>0 ? `<button id="stopMoveBtn" class="secondary">Hareketi Bitir</button>` : ''}
+            ${canSuggest ? `<button id="suggestBtn">🔍 Öneride Bulun</button>` : ''}
+            ${canEndTurn ? `<button id="accuseBtn" class="secondary">⚖️ Suçlama Yap</button>` : ''}
+            ${canEndTurn ? `<button id="endTurnBtn" class="secondary">Turu Bitir →</button>` : ''}
+          </div>
+
+          <details style="margin-top:14px;">
+            <summary style="cursor:pointer; color:var(--gold);">Elimdeki Kartlar</summary>
+            <div class="cardsRow">${p.hand.map(c=>renderCardHTML(c)).join('')}</div>
+          </details>
+
+          <details style="margin-top:10px;">
+            <summary style="cursor:pointer; color:var(--gold);">Not Defterim</summary>
+            ${renderNotesTable(p)}
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="color:var(--gold); margin-bottom:8px;">Olay Günlüğü</h3>
+      <div class="log">${G.log.map(l => `<div class="${l.important?'important':''}">${l.text}</div>`).join('')}</div>
+    </div>
+  `;
+
+  app.querySelectorAll('.cell.reachable').forEach(el => {
+    el.onclick = () => moveTo(el.dataset.node);
+  });
+  const rollBtn = document.getElementById('rollBtn');
+  if (rollBtn) rollBtn.onclick = rollDice;
+  const secretBtn = document.getElementById('secretBtn');
+  if (secretBtn) secretBtn.onclick = useSecretPassage;
+  const stopBtn = document.getElementById('stopMoveBtn');
+  if (stopBtn) stopBtn.onclick = endMovementEarly;
+  const suggestBtn = document.getElementById('suggestBtn');
+  if (suggestBtn) suggestBtn.onclick = openSuggestion;
+  const accuseBtn = document.getElementById('accuseBtn');
+  if (accuseBtn) accuseBtn.onclick = openAccusation;
+  const endTurnBtn = document.getElementById('endTurnBtn');
+  if (endTurnBtn) endTurnBtn.onclick = endTurn;
+}
+
+function renderNotesTable(p) {
+  const cols = [...CHARACTERS.map(c=>({id:c.id,label:charName(c.id).split(' ')[0]})), ...WEAPONS.map(w=>({id:w.id,label:w.icon})), ...ROOMS.map(r=>({id:r.id,label:r.name.split(' ')[0]}))];
+  // basit tek satırlık not: her öğeye tıkla -> döngü: '' -> 'X' -> '✓' -> ''
+  return `<table class="notesGrid"><tr>${cols.map(c=>`<th>${c.label}</th>`).join('')}</tr><tr>${cols.map(c=>`<td class="cell" data-key="${c.id}">${p.notes[c.id]||''}</td>`).join('')}</tr></table>`;
+}
+
+// not defteri tıklama (event delegation ile, render sonrası bağla)
+document.addEventListener('click', (e) => {
+  if (e.target.matches('.notesGrid td.cell')) {
+    const p = currentPlayer();
+    const key = e.target.dataset.key;
+    const cur = p.notes[key] || '';
+    p.notes[key] = cur === '' ? '✗' : cur === '✗' ? '✓' : '';
+    e.target.textContent = p.notes[key];
+  }
+});
+
+/* ---- öneri modalı ---- */
+function renderSuggestionModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modalOverlay';
+  overlay.innerHTML = `
+    <div class="modalBox">
+      <h2>Öneride Bulun</h2>
+      <p class="muted center" style="margin-bottom:14px;">Oda: <strong style="color:var(--gold)">${roomName(currentPlayer().node)}</strong></p>
+      <div class="fieldGroup">
+        <label>Şüpheli</label>
+        <select id="sugSuspect">${CHARACTERS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+      </div>
+      <div class="fieldGroup">
+        <label>Silah</label>
+        <select id="sugWeapon">${WEAPONS.map(w=>`<option value="${w.id}">${w.icon} ${w.name}</option>`).join('')}</select>
+      </div>
+      <div class="center" style="display:flex; gap:10px; justify-content:center;">
+        <button class="secondary" id="cancelSugBtn">Vazgeç</button>
+        <button id="confirmSugBtn">Öneriyi Yap</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('cancelSugBtn').onclick = () => { overlay.remove(); G.screen='board'; render(); };
+  document.getElementById('confirmSugBtn').onclick = () => {
+    const s = document.getElementById('sugSuspect').value;
+    const w = document.getElementById('sugWeapon').value;
+    overlay.remove();
+    submitSuggestion(s,w);
+  };
+}
+
+/* ---- suçlama modalı ---- */
+function renderAccusationModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modalOverlay';
+  overlay.innerHTML = `
+    <div class="modalBox">
+      <h2>⚖️ Son Suçlama</h2>
+      <p class="muted center" style="margin-bottom:14px;">Dikkat: yanlış tahmin ederseniz oyundan elenirsiniz!</p>
+      <div class="fieldGroup">
+        <label>Şüpheli</label>
+        <select id="accSuspect">${CHARACTERS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+      </div>
+      <div class="fieldGroup">
+        <label>Silah</label>
+        <select id="accWeapon">${WEAPONS.map(w=>`<option value="${w.id}">${w.icon} ${w.name}</option>`).join('')}</select>
+      </div>
+      <div class="fieldGroup">
+        <label>Oda</label>
+        <select id="accRoom">${ROOMS.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>
+      </div>
+      <div class="center" style="display:flex; gap:10px; justify-content:center;">
+        <button class="secondary" id="cancelAccBtn">Vazgeç</button>
+        <button id="confirmAccBtn">Suçlamayı Yap</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('cancelAccBtn').onclick = () => { overlay.remove(); G.screen='board'; render(); };
+  document.getElementById('confirmAccBtn').onclick = () => {
+    const s = document.getElementById('accSuspect').value;
+    const w = document.getElementById('accWeapon').value;
+    const r = document.getElementById('accRoom').value;
+    overlay.remove();
+    submitAccusation(s,w,r);
+  };
+}
+
+/* ---- oyun sonu ---- */
+function renderGameOver() {
+  app.innerHTML = `
+    <div class="panel center">
+      ${G.winner ? `
+        <h1 style="color:var(--gold);">🏆 Gizem Çözüldü! 🏆</h1>
+        <p class="lead" style="margin:12px 0;"><strong style="color:${G.winner.color}">${G.winner.name}</strong> doğru cevabı buldu!</p>
+      ` : `
+        <h1 style="color:var(--blood);">Gizem Çözülemedi...</h1>
+        <p class="lead" style="margin:12px 0;">Tüm oyuncular yanlış suçlamalarda bulundu.</p>
+      `}
+      <h3 style="margin-top:10px; color:var(--gold);">Gerçek Cevap:</h3>
+      <div class="cardsRow center" style="justify-content:center; margin-top:10px;">
+        ${renderCardHTML(G.solution.suspect)}
+        ${renderCardHTML(G.solution.weapon)}
+        ${renderCardHTML(G.solution.room)}
+      </div>
+      <button id="newGameBtn" style="margin-top:20px;">Yeni Oyun</button>
+    </div>
+  `;
+  document.getElementById('newGameBtn').onclick = () => { G = null; render(); };
+}
+
+/* ======================= BAŞLAT ======================= */
+render();
+</script>
+</body>
+</html>
