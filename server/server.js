@@ -23,14 +23,15 @@ const STATIC = {
   '/app.js': 'public/app.js',
   '/tek-cihaz': 'ravenwood-cinayeti.html',
 };
-const TYPES = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.jpg':'image/jpeg', '.png':'image/png', '.css':'text/css; charset=utf-8' };
+const TYPES = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.jpg':'image/jpeg', '.png':'image/png', '.css':'text/css; charset=utf-8', '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.m4a':'audio/mp4' };
 
 function resolveStatic(urlPath) {
   if (STATIC[urlPath]) return path.join(ROOT, STATIC[urlPath]);
-  // yalnızca images/ altındaki dosyalar, klasör dışına çıkmadan
-  if (urlPath.startsWith('/images/')) {
+  // yalnızca images/ ve audio/ altındaki dosyalar, klasör dışına çıkmadan
+  for (const dir of ['images', 'audio']) {
+    if (!urlPath.startsWith(`/${dir}/`)) continue;
     const file = path.normalize(path.join(ROOT, decodeURIComponent(urlPath)));
-    if (file.startsWith(path.join(ROOT, 'images') + path.sep)) return file;
+    if (file.startsWith(path.join(ROOT, dir) + path.sep)) return file;
   }
   return null;
 }
@@ -45,7 +46,7 @@ const server = http.createServer((req, res) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Bulunamadı'); return; }
     res.writeHead(200, {
       'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream',
-      'Cache-Control': urlPath.startsWith('/images/') ? 'public, max-age=86400' : 'no-cache',
+      'Cache-Control': /^\/(images|audio)\//.test(urlPath) ? 'public, max-age=86400' : 'no-cache',
     });
     res.end(data);
   });

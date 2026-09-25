@@ -30,6 +30,15 @@ const playerById = id => S?.players.find(p => p.id === id);
 const me = () => playerById(S?.you.id);
 
 document.getElementById('gameTitle').textContent = `🕯️ ${D.TITLE} 🕯️`;
+// Müzik atfı yalnızca müzik dosyası sunucuda gerçekten varsa gösterilir
+if (D.MUSIC && D.MUSIC.file && D.MUSIC.credit) {
+  fetch(D.MUSIC.file, { method: 'HEAD' }).then(r => {
+    if (!r.ok) return;
+    const el = document.getElementById('musicCredit');
+    el.textContent = 'Müzik: ' + D.MUSIC.credit;
+    el.hidden = false;
+  }).catch(() => {});
+}
 
 // ---------------- bağlantı ----------------
 function connect() {

@@ -182,12 +182,15 @@ const Music = {
     if (this.synthBus) this.synthBus.gain.linearRampToValueAtTime(this.on?0.55:0, this.ctx.currentTime+0.3);
     return this.on;
   },
-  useFile(file) {
-    if (this.userAudio) { this.userAudio.pause(); URL.revokeObjectURL(this.userAudio.src); }
-    const a = new Audio(URL.createObjectURL(file));
+  useFile(file) { this.useUrl(URL.createObjectURL(file)); },
+  // Dosya çalınamazsa (yoksa ya da bozuksa) otomatik olarak bestelenmiş müziğe döner
+  useUrl(url) {
+    if (this.userAudio) { this.userAudio.pause(); if (this.userAudio.src.startsWith('blob:')) URL.revokeObjectURL(this.userAudio.src); }
+    const a = new Audio(url);
     a.loop = true; a.volume = 0.6;
+    a.addEventListener('error', () => { if (this.userAudio === a) this.userAudio = null; });
     this.userAudio = a;
-    if (this.on) a.play().catch(()=>{});
+    if (this.on) a.play().catch(() => { if (this.userAudio === a && a.error) this.userAudio = null; });
   }
 };
 let sfxOn = true;
@@ -211,6 +214,9 @@ function ensureAudio() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     Music.init(ctx); Music.start();
   } catch(e) {}
+  // Depoda arka plan müziği dosyası varsa onu çal (shared/data.js > MUSIC)
+  const music = window.GameData && window.GameData.MUSIC;
+  if (music && music.file) Music.useUrl(music.file);
 }
 document.addEventListener('click', ensureAudio, {once:true});
 document.addEventListener('touchstart', ensureAudio, {once:true});

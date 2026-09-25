@@ -8,6 +8,13 @@
   const TITLE = 'CLUEDO';
   const VICTIM = 'Dr. Black';
 
+  // Arka plan müziği: bu dosya depoda varsa döngüde çalar, yoksa oyunun kendi bestelenmiş müziği çalar.
+  // credit: lisansın istediği atıf metni (oyunun altında gösterilir). Dosya yoksa boş bırakılabilir.
+  const MUSIC = {
+    file: 'audio/arka-plan.mp3',
+    credit: '"Sneaky Snitch" Kevin MacLeod (incompetech.com) · Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/',
+  };
+
   // Oyun sırası bu listedeki sıradır (orijinaldeki gibi Scarlett başlar)
   const CHARACTERS = [
     { id:'scarlett', name:'Bayan Scarlett', start:'24,7',  color:'#dc2626' },
@@ -99,6 +106,6 @@
     return { squares, rooms };
   }
 
-  return { TITLE, VICTIM, CHARACTERS, WEAPONS, ROOMS, CENTER, ROWS, COLS, CELL, DOORS,
+  return { TITLE, VICTIM, MUSIC, CHARACTERS, WEAPONS, ROOMS, CENTER, ROWS, COLS, CELL, DOORS,
            ROOM_BY_ID, CHAR_BY_ID, WEAPON_BY_ID, posKey, isRoom, neighbors, computeMoves };
 });
