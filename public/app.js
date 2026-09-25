@@ -9,12 +9,17 @@ let prev = null;            // bir önceki durum (ses ve bildirimler için)
 let ui = { modal: null };   // açık pencere: 'suggest' | 'accuse' | null
 let retry = 0;
 
-const store = {
-  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-  del(k) { try { localStorage.removeItem(k); } catch {} },
-};
-let session = store.get('cluedo.session'); // { code, token }
+const makeStore = area => ({
+  get(k) { try { return JSON.parse(window[area].getItem(k)); } catch { return null; } },
+  set(k, v) { try { window[area].setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { window[area].removeItem(k); } catch {} },
+});
+const store = makeStore('localStorage');   // bu tarayıcıda kalıcı: ad, notlar, kayıtlı oyunlar
+const tabStore = makeStore('sessionStorage'); // yalnızca bu sekme: hangi oyuncu olduğu
+// Her sekme ayrı bir oyuncudur (aynı tarayıcıda birkaç sekmeyle de oynanabilir).
+// Sekme yenilenince sessionStorage'dan otomatik devam eder; kapatılıp açılırsa "Oyuna geri dön" çıkar.
+let session = tabStore.get('cluedo.session'); // { code, token }
+let takenOver = false; // bu oyuncu başka bir sekmede açıldı
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
 const charName = id => D.CHAR_BY_ID[id]?.name || id;
@@ -40,7 +45,8 @@ function connect() {
     let msg; try { msg = JSON.parse(ev.data); } catch { return; }
     onMessage(msg);
   };
-  ws.onclose = () => {
+  ws.onclose = ev => {
+    if (ev.code === 4000) { takenOver = true; S = null; render(); return; }
     if (S) document.getElementById('conn').hidden = false;
     retry = Math.min(retry + 1, 6);
     setTimeout(connect, 500 * retry);
@@ -56,7 +62,10 @@ const act = (action, extra = {}) => { ensureAudio(); send({ t: 'act', action, ..
 function onMessage(msg) {
   if (msg.t === 'joined') {
     session = { code: msg.code, token: msg.token };
-    store.set('cluedo.session', session);
+    tabStore.set('cluedo.session', session);
+    const saved = store.get('cluedo.saved') || {};
+    saved[msg.code] = { token: msg.token, at: Date.now() };
+    store.set('cluedo.saved', saved);
     const url = new URL(location.href); url.searchParams.set('oda', msg.code);
     history.replaceState(null, '', url);
   } else if (msg.t === 'state') {
@@ -66,14 +75,28 @@ function onMessage(msg) {
   } else if (msg.t === 'error') {
     toast(msg.msg);
   } else if (msg.t === 'resumeFailed' || msg.t === 'left') {
+    if (session) forgetSaved(session.code);
     clearSession();
     render();
   }
 }
 
+function forgetSaved(code) {
+  const saved = store.get('cluedo.saved') || {};
+  delete saved[code];
+  store.set('cluedo.saved', saved);
+}
+
+function resumeSaved(code, token) {
+  takenOver = false;
+  session = { code, token };
+  tabStore.set('cluedo.session', session);
+  if (!ws || ws.readyState > 1) connect(); else send({ t: 'resume', code, token });
+}
+
 function clearSession() {
   session = null; S = null; prev = null; ui.modal = null;
-  store.del('cluedo.session');
+  tabStore.del('cluedo.session');
   const url = new URL(location.href); url.searchParams.delete('oda');
   history.replaceState(null, '', url);
 }
@@ -116,7 +139,23 @@ function renderHome() {
   const params = new URLSearchParams(location.search);
   const code = (params.get('oda') || '').toUpperCase().slice(0, 4);
   const name = store.get('cluedo.name') || '';
+  if (takenOver && session) {
+    app.innerHTML = `<div class="panel center" style="display:flex; flex-direction:column; gap:12px; align-items:center">
+      <h2 style="color:var(--gold)">Bu oyuncu başka bir sekmede açıldı</h2>
+      <p class="muted">Aynı oyuncu yalnızca bir sekmede oynayabilir. Oyunu bu sekmede sürdürmek isterseniz aşağıdaki düğmeye basın.</p>
+      <button type="button" id="takeBackBtn">Bu Sekmede Devam Et</button>
+    </div>`;
+    document.getElementById('takeBackBtn').onclick = () => resumeSaved(session.code, session.token);
+    return;
+  }
+  const saved = store.get('cluedo.saved') || {};
+  const back = code && saved[code] ? code : null;
   app.innerHTML = `
+    ${back ? `<div class="panel center" style="display:flex; flex-direction:column; gap:10px; align-items:center">
+      <p>Bu tarayıcıda <strong style="color:var(--gold)">${esc(back)}</strong> odasında daha önce oynadınız.</p>
+      <button type="button" id="rejoinBtn">Oyuna Geri Dön</button>
+      <p class="muted">Yeni bir oyuncu olarak katılmak için aşağıdaki "Oyuna Katıl" bölümünü kullanın.</p>
+    </div>` : ''}
     <div class="panel startScreen">
       <h2 style="color:var(--gold); margin-bottom:8px;">Gizem Başlıyor</h2>
       <p class="lead">Malikanenin sahibi ${esc(D.VICTIM)} ölü bulundu. Altı şüpheliden biri, altı suç aletinden biriyle, dokuz odadan birinde bu cinayeti işledi. Her oyuncu kendi cihazından katılır; kartlarınızı yalnızca siz görürsünüz.</p>
@@ -158,6 +197,7 @@ function renderHome() {
     store.set('cluedo.name', n);
     send({ t: 'join', code: c, name: n });
   };
+  if (back) document.getElementById('rejoinBtn').onclick = () => resumeSaved(back, saved[back].token);
   if (code) document.getElementById('joinName').focus();
 }
 
@@ -326,7 +366,8 @@ function renderGame() {
           </div>
         </div>
         <div class="sidePanel">
-          ${S.turn.dice ? `<div class="diceDisplay">🎲${S.turn.dice[0]} 🎲${S.turn.dice[1]}</div>` : `<div class="center muted" style="padding:14px 0;">${myTurn ? 'Zar atmayı bekliyor…' : ''}</div>`}
+          ${S.turn.dice ? `<div class="diceDisplay">🎲${S.turn.dice[0]} 🎲${S.turn.dice[1]}</div>` : ''}
+          ${S.phase === 'playing' && !myTurn && !S.you.eliminated ? `<div class="pendingBanner">Şu an sıra <strong>${esc(cur.name)}</strong> oyuncusunda. Sıra size gelince <strong>Zar At</strong> düğmesi burada çıkar.</div>` : ''}
           <div class="actionBtns">
             ${canRoll ? '<button type="button" id="rollBtn">🎲 Zar At</button>' : ''}
             ${canSecret ? `<button type="button" id="secretBtn" class="secondary">🌀 Gizli Geçit: ${esc(roomName(room.secretTo))}</button>` : ''}
