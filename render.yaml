@@ -1,0 +1,9 @@
+# Render.com için tek tıkla kurulum: Dashboard > New > Blueprint > bu depoyu seçin
+services:
+  - type: web
+    name: cluedo-cevrimici
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /saglik

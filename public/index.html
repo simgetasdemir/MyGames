@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cluedo Çevrimiçi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .connBar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--blood); color: var(--parchment); text-align:center; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 15px; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 300; background: #3a1212; color: var(--parchment); border: 1px solid #8f2323; border-radius: 8px; padding: 10px 16px; max-width: calc(100% - 32px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); font-size: 16px; }
+
+  .homeGrid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .homeGrid .panel { margin-bottom: 0; display:flex; flex-direction:column; gap: 12px; }
+  .homeGrid input[type=text] { width: 100%; font-size: 17px; }
+  .codeInput { text-transform: uppercase; letter-spacing: 6px; font-size: 22px !important; text-align:center; font-family: 'Playfair Display', serif !important; }
+  .altLink { color: var(--gold); }
+
+  .lobbyCode { display:flex; flex-direction:column; align-items:center; gap: 6px; }
+  .lobbyCode .code { font-family: 'Playfair Display', serif; font-size: clamp(40px, 12vw, 64px); letter-spacing: 12px; color: var(--gold); line-height: 1; padding-left: 12px; }
+  .shareRow { display:flex; gap: 8px; width: 100%; max-width: 520px; flex-wrap: wrap; }
+  .shareRow input { flex: 1 1 220px; min-width: 0; font-size: 14px; }
+  .playerList { display:flex; flex-direction:column; gap: 8px; }
+  .playerRow { display:flex; align-items:center; gap: 10px; padding: 8px 10px; border: 1px solid #3d2c14; border-radius: 8px; background: rgba(0,0,0,0.18); }
+  .playerRow .pname { font-weight: 600; font-size: 17px; }
+  .playerRow .pmeta { margin-left: auto; display:flex; gap: 6px; align-items:center; flex-wrap: wrap; justify-content: flex-end; }
+  .chip { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid var(--gold-dim); color: var(--gold); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .chip.off { color: #e9a3a3; border-color: #8f2323; }
+  .chip.turn { background: var(--gold); color: #201404; border-color: var(--gold); }
+  .chip.out { color: var(--text-dim); border-color: #5c4716; text-decoration: line-through; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #16a34a; flex: none; }
+  .dot.off { background: #8f2323; }
+  .charGrid { display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+  .charBtn { display:flex; flex-direction:column; align-items:center; gap: 4px; padding: 10px 6px; background: var(--panel-light); color: var(--text); border: 1px solid #5c4716; box-shadow:none; }
+  .charBtn.sel { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
+  .charBtn .who { font-size: 12px; color: var(--text-dim); min-height: 15px; }
+
+  .turnBanner { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
+  .turnBanner .you { margin-left: auto; }
+  .pendingBanner { border: 1px solid var(--gold-dim); background: rgba(212,175,55,0.08); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 16px; }
+  .revealBox { border: 1px solid var(--gold); border-radius: 8px; padding: 10px; margin-top: 10px; background: rgba(212,175,55,0.08); }
+  .revealBox .card { display:inline-block; margin-top: 6px; }
+  .sideSection { margin-top: 14px; }
+  .sideSection h3 { color: var(--gold); font-size: 17px; margin-bottom: 6px; }
+  .solutionBox { border: 1px dashed #8f2323; border-radius: 8px; padding: 10px; margin-top: 10px; color: var(--parchment); }
+  .gameOverBox { text-align:center; display:flex; flex-direction:column; gap: 12px; align-items:center; }
+  .sidePanel .card { min-width: 88px; padding: 6px 8px; }
+  .sidePanel .card .cardPhoto { width: 88px; height: 55px; }
+  .noteBox { padding: 0; box-shadow: none; font-size: 14px; font-family: inherit; }
+  .noteBox:hover { transform: none; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .sq.reach, .room.reach { animation: none; } button { transition: none; } }
+</style>
+</head>
+<body>
+<button id="musicToggle" title="Müziği aç/kapat" aria-label="Müziği aç/kapat">🎵</button>
+<button id="sfxToggle" title="Ses efektlerini aç/kapat" aria-label="Ses efektlerini aç/kapat">🔊</button>
+<label id="musicFileBtn" title="Kendi müzik dosyanı çal (yalnızca bu tarayıcıda)">📂<input type="file" id="musicFile" accept="audio/*" hidden></label>
+
+<div class="wrap">
+  <div class="titlebar">
+    <h1 id="gameTitle">🕯️ CLUEDO 🕯️</h1>
+    <div class="ornateDivider"><span>❖</span></div>
+    <p>Bir gece, bir cinayet, altı şüpheli...</p>
+  </div>
+  <div id="conn" class="connBar" hidden>Sunucuyla bağlantı koptu, yeniden bağlanılıyor…</div>
+  <div id="app"></div>
+</div>
+<div id="modalRoot"></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="shared/data.js"></script>
+<script src="art.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

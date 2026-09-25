@@ -1,0 +1,16 @@
+{
+  "name": "cluedo-cevrimici",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Her oyuncunun kendi cihazından katıldığı çok oyunculu cinayet gizemi oyunu",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
+  }
+}
