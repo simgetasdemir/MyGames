@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cluedo Çevrimiçi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
   .connBar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--blood); color: var(--parchment); text-align:center; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 15px; }
@@ -51,6 +51,110 @@
   .noteBox:hover { transform: none; }
   :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .sq.reach, .room.reach { animation: none; } button { transition: none; } }
+
+  /* ===== Açılış görselinin tonları: gece siyahı ahşap, yaldız altın, bordo kadife, parşömen ===== */
+  :root {
+    --bg: #0c0806; --panel: #15100b; --panel-light: #1f150d;
+    --gold: #d9b25a; --gold-bright: #f3d58a; --gold-dim: #8a6a2c;
+    --blood: #6d0f18; --velvet: #8f1c24; --parchment: #efe0b8; --text: #eadcb8; --text-dim: #b09a6e;
+    --gilt: linear-gradient(180deg, #fbe7a6 0%, #e2bd66 38%, #b88a3c 62%, #8c6424 100%);
+    --display: 'Cinzel', 'Playfair Display', Georgia, serif;
+  }
+  body {
+    background-color: var(--bg);
+    background-image: linear-gradient(180deg, rgba(10,7,4,0.9), rgba(10,7,4,0.96)), url('images/giris.webp');
+    background-size: cover; background-position: center top; background-attachment: fixed;
+  }
+  h1, h2, h3, .display { font-family: var(--display); letter-spacing: 0.06em; }
+  .titlebar h1 { background: var(--gilt); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; font-size: clamp(34px, 7vw, 64px); text-shadow: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.8)); }
+  .titlebar .tagline { font-family: var(--display); font-style: normal; letter-spacing: 0.22em; text-transform: uppercase; font-size: 13px; color: var(--gold); }
+  .panel {
+    background: linear-gradient(180deg, rgba(23,16,10,0.95), rgba(13,9,6,0.97));
+    border: 1px solid #b88d3e; border-radius: 4px;
+    box-shadow: inset 0 0 0 4px rgba(13,9,6,0.95), inset 0 0 0 5px rgba(217,178,90,0.32), 0 12px 32px rgba(0,0,0,0.6);
+  }
+  .panel h2, .panel h3, .modalBox h2, .sideSection h3 { color: var(--gold); text-transform: uppercase; }
+  button {
+    font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 15px;
+    background: var(--gilt); color: #1a1008; border: 1px solid rgba(243,213,138,0.45); border-radius: 3px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  button:hover { box-shadow: 0 6px 18px rgba(217,178,90,0.3), inset 0 1px 0 rgba(255,255,255,0.35); }
+  button.secondary { background: rgba(13,9,6,0.7); color: var(--gold); border: 1px solid var(--gold-dim); box-shadow: none; }
+  button.secondary:hover { border-color: var(--gold); color: var(--gold-bright); }
+  label { font-family: var(--display); font-size: 11px; letter-spacing: 0.16em; color: var(--text-dim); }
+  select, input[type=text] { background: var(--panel-light); border: 1px solid var(--gold-dim); border-radius: 3px; color: var(--text); }
+  select:focus, input[type=text]:focus { outline: 1px solid var(--gold-bright); border-color: var(--gold); }
+  .modalOverlay { background: rgba(6,4,2,0.9); }
+  .modalBox { background: #120d09; border: 1px solid #b88d3e; border-radius: 4px; box-shadow: inset 0 0 0 4px #120d09, inset 0 0 0 5px rgba(217,178,90,0.32), 0 20px 50px rgba(0,0,0,0.7); }
+  .chip { font-family: var(--display); }
+  .chip.turn { background: var(--gilt); color: #1a1008; border-color: transparent; }
+  .chip.off { color: #f0b3b3; border-color: var(--velvet); background: rgba(109,15,24,0.35); }
+  .pendingBanner { background: linear-gradient(90deg, rgba(109,15,24,0.45), rgba(109,15,24,0.15)); border: 1px solid var(--velvet); color: var(--parchment); }
+  .revealBox { border-color: var(--gold); background: rgba(217,178,90,0.08); }
+  .solutionBox { border-color: var(--velvet); background: rgba(109,15,24,0.25); }
+  .playerRow { background: rgba(0,0,0,0.3); border-color: #3a2a14; }
+  .charBtn, .noteBox, .choiceGrid button { text-transform: none; letter-spacing: 0; }
+  .charBtn { font-family: 'Cormorant Garamond', serif; background: rgba(31,21,13,0.9); color: var(--text); border: 1px solid #5c4716; box-shadow: none; }
+  .charBtn.sel { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset, 0 0 18px rgba(217,178,90,0.25); }
+  .lobbyCode .code { font-family: var(--display); background: var(--gilt); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cboard { border: 2px solid #b88d3e; box-shadow: 0 0 0 4px #120d09, 0 0 0 5px rgba(217,178,90,0.35), 0 14px 34px rgba(0,0,0,0.6); background: #0e0a06; }
+  .centerBlock { background: repeating-linear-gradient(45deg, #1a0d0e 0 6px, #140a0b 6px 12px); border-color: var(--velvet); }
+  .centerBlock .ctitle { font-family: var(--display); background: var(--gilt); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .log div.important { color: var(--gold-bright); }
+  .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ===== Giriş sayfası: tasarım görseli + üstüne yerleşen gerçek alanlar ===== */
+  body.home .titlebar { display: none; }
+  body.home .wrap { max-width: 1400px; }
+  .landing {
+    position: relative; width: 100%; max-width: 100%; aspect-ratio: 1683 / 935;
+    background: #0c0806 url('images/giris.webp') center / 100% 100% no-repeat;
+    border-radius: 6px; overflow: hidden; container-type: inline-size;
+    box-shadow: 0 0 0 1px rgba(217,178,90,0.35), 0 20px 60px rgba(0,0,0,0.7);
+  }
+  .lf { display: contents; }
+  .hot { position: absolute; margin: 0; }
+  input.hot {
+    background: #1f150d; border: none; border-radius: 1px; color: var(--parchment);
+    font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.3cqw; padding: 0 0.5cqw;
+  }
+  input.hot::placeholder { color: #8f7a55; }
+  input.hot:focus { outline: 1px solid var(--gold-bright); }
+  .hot-code { text-align: center; text-transform: uppercase; letter-spacing: 0.9cqw; font-family: var(--display) !important; font-size: 1.35cqw !important; }
+  button.hot { background: transparent; border: none; box-shadow: none; padding: 0; border-radius: 0.5cqw; transform: none; filter: none; }
+  button.hot:hover { background: rgba(255,228,160,0.12); box-shadow: 0 0 2cqw rgba(243,213,138,0.4); transform: none; }
+  button.hot:active { background: rgba(255,228,160,0.2); }
+  button.hot:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+  .hot-create-name { left: 31.31%; top: 49.09%; width: 13.96%; height: 3.64%; }
+  .hot-play        { left: 28.99%; top: 55.51%; width: 16.46%; height: 5.35%; }
+  .hot-code        { left: 56.09%; top: 49.09%; width: 14.38%; height: 3.64%; }
+  .hot-join-name   { left: 56.33%; top: 56.36%; width: 14.14%; height: 3.64%; }
+  .hot-join        { left: 54.07%; top: 61.60%; width: 16.58%; height: 4.71%; }
+  .hot-tile        { top: 72.09%; width: 8.91%; height: 10.05%; }
+  .hot-tile.t0 { left: 31.67%; } .hot-tile.t1 { left: 41.41%; } .hot-tile.t2 { left: 51.16%; } .hot-tile.t3 { left: 60.90%; }
+  .rejoinPanel { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .mobileHome { display: none; }
+  @media (max-width: 760px) {
+    body.home .wrap { padding-top: 44px; }
+    .landing { aspect-ratio: 2.65 / 1; background-size: 185% auto; background-position: 50% 7%; }
+    .landing .hot { display: none; }
+    .mobileHome { display: grid; gap: 14px; margin-top: 14px; }
+    .mobileHome .panel { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+    .mobileHome input[type=text] { width: 100%; font-size: 17px; }
+    .mobileTiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  }
+
+  /* bilgi pencereleri */
+  .infoBox { max-width: 640px; }
+  .infoList { margin-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.5; }
+  .infoGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .infoGrid.rooms { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  .infoItem { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 10px; margin: 0; border: 1px solid #3a2a14; background: rgba(0,0,0,0.3); border-radius: 4px; }
+  .infoItem img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 2px; }
+  .infoItem figcaption { display: flex; flex-direction: column; gap: 2px; }
+  .swatch { width: 38px; height: 6px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.5); }
+  .weaponBig { color: var(--gold); line-height: 0; }
 </style>
 </head>
 <body>
@@ -60,9 +164,9 @@
 
 <div class="wrap">
   <div class="titlebar">
-    <h1 id="gameTitle">🕯️ CLUEDO 🕯️</h1>
+    <h1 id="gameTitle">CLUEDO</h1>
     <div class="ornateDivider"><span>❖</span></div>
-    <p>Bir gece, bir cinayet, altı şüpheli...</p>
+    <p class="tagline">Bir gece, bir cinayet, altı şüpheli...</p>
   </div>
   <div id="conn" class="connBar" hidden>Sunucuyla bağlantı koptu, yeniden bağlanılıyor…</div>
   <div id="app"></div>

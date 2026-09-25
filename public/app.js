@@ -29,7 +29,7 @@ const roomName = id => D.ROOM_BY_ID[id]?.name || id;
 const playerById = id => S?.players.find(p => p.id === id);
 const me = () => playerById(S?.you.id);
 
-document.getElementById('gameTitle').textContent = `🕯️ ${D.TITLE} 🕯️`;
+document.getElementById('gameTitle').textContent = D.TITLE;
 // Müzik atfı yalnızca müzik dosyası sunucuda gerçekten varsa gösterilir
 if (D.MUSIC && D.MUSIC.file && D.MUSIC.credit) {
   fetch(D.MUSIC.file, { method: 'HEAD' }).then(r => {
@@ -133,6 +133,7 @@ function cues() {
 
 // ---------------- çizim ----------------
 function render() {
+  document.body.classList.toggle('home', !S && !takenOver);
   if (!S) renderHome();
   else if (S.phase === 'lobby') renderLobby();
   else renderGame();
@@ -159,56 +160,94 @@ function renderHome() {
   }
   const saved = store.get('cluedo.saved') || {};
   const back = code && saved[code] ? code : null;
+  const tiles = [['rules', 'Nasıl oynanır?'], ['suspects', 'Şüpheliler'], ['rooms', 'Odalar'], ['weapons', 'Silahlar']];
   app.innerHTML = `
-    ${back ? `<div class="panel center" style="display:flex; flex-direction:column; gap:10px; align-items:center">
+    ${back ? `<div class="panel center rejoinPanel">
       <p>Bu tarayıcıda <strong style="color:var(--gold)">${esc(back)}</strong> odasında daha önce oynadınız.</p>
       <button type="button" id="rejoinBtn">Oyuna Geri Dön</button>
-      <p class="muted">Yeni bir oyuncu olarak katılmak için aşağıdaki "Oyuna Katıl" bölümünü kullanın.</p>
     </div>` : ''}
-    <div class="panel startScreen">
-      <h2 style="color:var(--gold); margin-bottom:8px;">Gizem Başlıyor</h2>
-      <p class="lead">Malikanenin sahibi ${esc(D.VICTIM)} ölü bulundu. Altı şüpheliden biri, altı suç aletinden biriyle, dokuz odadan birinde bu cinayeti işledi. Her oyuncu kendi cihazından katılır; kartlarınızı yalnızca siz görürsünüz.</p>
-      <ul class="rules">
-        <li>Bir oyuncu oyunu kurar ve 4 harfli oda kodunu ya da linki arkadaşlarıyla paylaşır.</li>
-        <li>3 ile 6 kişi arası oynanır. Bayan Scarlett her zaman ilk başlar.</li>
-        <li>Odaya girince bir şüpheli ve bir silah önerirsiniz; elinde eşleşen kart olan ilk oyuncu size gizlice gösterir.</li>
-        <li>Emin olduğunuzda "Suçlama Yap" ile şüpheli, silah ve odayı tahmin edin. Yanlışsa oyundan düşersiniz.</li>
-      </ul>
-    </div>
-    <div class="homeGrid">
-      <form class="panel" id="createForm">
-        <h3 style="color:var(--gold)">Yeni Oyun Kur</h3>
-        <div><label for="createName">Adınız</label><input type="text" id="createName" maxlength="20" autocomplete="nickname" value="${esc(name)}" placeholder="Örn. Simge"></div>
-        <button type="submit">Oda Kur</button>
+    <section class="landing" aria-label="${esc(D.TITLE)} giriş">
+      <h1 class="srOnly">${esc(D.TITLE)}: Bir gece, bir cinayet, altı şüpheli</h1>
+      <form class="lf" id="createForm" aria-label="Yeni oyun kur">
+        <input type="text" class="hot hot-create-name" id="createName" maxlength="20" autocomplete="nickname" value="${esc(name)}" placeholder="Adınız" aria-label="Adınız (yeni oyun)">
+        <button type="submit" class="hot hot-play" aria-label="Oyna: yeni oda kur"></button>
       </form>
-      <form class="panel" id="joinForm">
-        <h3 style="color:var(--gold)">Oyuna Katıl</h3>
-        <div><label for="joinCode">Oda kodu</label><input type="text" id="joinCode" class="codeInput" maxlength="4" autocomplete="off" value="${esc(code)}" placeholder="ABCD"></div>
-        <div><label for="joinName">Adınız</label><input type="text" id="joinName" maxlength="20" autocomplete="nickname" value="${esc(name)}" placeholder="Örn. Ali"></div>
+      <form class="lf" id="joinForm" aria-label="Oyuna katıl">
+        <input type="text" class="hot hot-code" id="joinCode" maxlength="4" autocomplete="off" value="${esc(code)}" placeholder="ABCD" aria-label="Oda kodu">
+        <input type="text" class="hot hot-join-name" id="joinName" maxlength="20" autocomplete="nickname" value="${esc(name)}" placeholder="Adınız" aria-label="Adınız (katıl)">
+        <button type="submit" class="hot hot-join" aria-label="Katıl"></button>
+      </form>
+      ${tiles.map(([k, label], i) => `<button type="button" class="hot hot-tile t${i}" data-info="${k}" aria-label="${label}"></button>`).join('')}
+    </section>
+    <div class="mobileHome">
+      <form class="panel" id="mCreateForm">
+        <h3>Yeni Oyun Kur</h3>
+        <div><label for="mCreateName">Adınız</label><input type="text" id="mCreateName" maxlength="20" autocomplete="nickname" value="${esc(name)}" placeholder="Adınız"></div>
+        <button type="submit">Oyna</button>
+      </form>
+      <form class="panel" id="mJoinForm">
+        <h3>Oyuna Katıl</h3>
+        <div><label for="mJoinCode">Oda kodu</label><input type="text" id="mJoinCode" class="codeInput" maxlength="4" autocomplete="off" value="${esc(code)}" placeholder="ABCD"></div>
+        <div><label for="mJoinName">Adınız</label><input type="text" id="mJoinName" maxlength="20" autocomplete="nickname" value="${esc(name)}" placeholder="Adınız"></div>
         <button type="submit">Katıl</button>
       </form>
+      <div class="mobileTiles">${tiles.map(([k, label]) => `<button type="button" class="secondary" data-info="${k}">${label}</button>`).join('')}</div>
     </div>
-    <p class="muted center" style="margin-top:16px">Herkes aynı cihazda mı? <a class="altLink" href="tek-cihaz">Tek cihazda sırayla oynayın</a>.</p>
+    <p class="muted center" style="margin-top:14px">Herkes aynı cihazda mı? <a class="altLink" href="tek-cihaz">Tek cihazda sırayla oynayın</a>.</p>
   `;
-  document.getElementById('createForm').onsubmit = e => {
-    e.preventDefault(); ensureAudio();
-    const n = document.getElementById('createName').value.trim();
-    if (!n) return toast('Lütfen adınızı yazın.');
-    store.set('cluedo.name', n);
-    send({ t: 'create', name: n });
+  const bindCreate = (formId, nameId) => {
+    document.getElementById(formId).onsubmit = e => {
+      e.preventDefault(); ensureAudio();
+      const n = document.getElementById(nameId).value.trim();
+      if (!n) return toast('Lütfen adınızı yazın.');
+      store.set('cluedo.name', n);
+      send({ t: 'create', name: n });
+    };
   };
-  document.getElementById('joinForm').onsubmit = e => {
-    e.preventDefault(); ensureAudio();
-    const c = document.getElementById('joinCode').value.trim().toUpperCase();
-    const n = document.getElementById('joinName').value.trim();
-    if (c.length !== 4) return toast('Oda kodu 4 harften oluşur.');
-    if (!n) return toast('Lütfen adınızı yazın.');
-    store.set('cluedo.name', n);
-    send({ t: 'join', code: c, name: n });
+  const bindJoin = (formId, codeId, nameId) => {
+    document.getElementById(formId).onsubmit = e => {
+      e.preventDefault(); ensureAudio();
+      const c = document.getElementById(codeId).value.trim().toUpperCase();
+      const n = document.getElementById(nameId).value.trim();
+      if (c.length !== 4) return toast('Oda kodu 4 harften oluşur.');
+      if (!n) return toast('Lütfen adınızı yazın.');
+      store.set('cluedo.name', n);
+      send({ t: 'join', code: c, name: n });
+    };
   };
+  bindCreate('createForm', 'createName'); bindCreate('mCreateForm', 'mCreateName');
+  bindJoin('joinForm', 'joinCode', 'joinName'); bindJoin('mJoinForm', 'mJoinCode', 'mJoinName');
+  app.querySelectorAll('[data-info]').forEach(b => { b.onclick = () => { ui.info = b.dataset.info; renderModal(); }; });
   if (back) document.getElementById('rejoinBtn').onclick = () => resumeSaved(back, saved[back].token);
-  if (code) document.getElementById('joinName').focus();
+  if (code) (window.matchMedia('(max-width: 760px)').matches ? document.getElementById('mJoinName') : document.getElementById('joinName')).focus();
 }
+
+// Giriş sayfasındaki dört bilgi kutucuğunun pencereleri
+function renderInfo() {
+  const titles = { rules: 'Nasıl Oynanır?', suspects: 'Şüpheliler', rooms: 'Odalar', weapons: 'Silahlar' };
+  let body = '';
+  if (ui.info === 'rules') body = `
+    <p class="muted" style="margin-bottom:10px">Malikanenin sahibi ${esc(D.VICTIM)} ölü bulundu. Katili, suç aletini ve odayı ilk bulan kazanır.</p>
+    <ol class="infoList">
+      <li>Bir oyuncu <strong>Oyna</strong> ile oda kurar ve 4 harfli oda kodunu ya da davet linkini paylaşır. 3 ile 6 kişi oynanır.</li>
+      <li>Herkes kendi cihazından katılır ve karakterini seçer. Kartlarınızı yalnızca siz görürsünüz.</li>
+      <li>Sıranız gelince zar atın ve koridorda ilerleyin. Odalara yalnızca kapılardan girilir; köşe odalar arasında gizli geçit vardır.</li>
+      <li>Bir odaya girince bir şüpheli ve bir silah önerin. Elinde eşleşen kart olan ilk oyuncu size gizlice bir kart gösterir.</li>
+      <li>Not defterinizde elenenleri işaretleyin. Emin olunca <strong>Suçlama Yap</strong> deyin; yanlışsa oyundan düşersiniz ama kart göstermeye devam edersiniz.</li>
+    </ol>`;
+  else if (ui.info === 'suspects') body = `<div class="infoGrid">${D.CHARACTERS.map(c => `<div class="infoItem">${avatar(c.id, 56)}<strong>${esc(c.name)}</strong><span class="swatch" style="background:${c.color}"></span></div>`).join('')}</div>`;
+  else if (ui.info === 'rooms') body = `<div class="infoGrid rooms">${D.ROOMS.map(r => `<figure class="infoItem"><img src="${r.img}" alt="${esc(r.name)}"><figcaption><strong>${esc(r.name)}</strong>${r.secretTo ? `<span class="muted">Gizli geçit → ${esc(roomName(r.secretTo))}</span>` : ''}</figcaption></figure>`).join('')}</div>`;
+  else if (ui.info === 'weapons') body = `<div class="infoGrid">${D.WEAPONS.map(w => `<div class="infoItem"><span class="weaponBig">${weaponIconSVG(w.id, 44)}</span><strong>${esc(w.name)}</strong></div>`).join('')}</div>`;
+  modalRoot.innerHTML = `<div class="modalOverlay" id="infoOverlay"><div class="modalBox infoBox" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <h2 id="infoTitle">${titles[ui.info]}</h2>${body}
+    <button type="button" id="infoClose" style="margin-top:16px; width:100%">Kapat</button>
+  </div></div>`;
+  const close = () => { ui.info = null; modalRoot.innerHTML = ''; };
+  document.getElementById('infoClose').onclick = close;
+  document.getElementById('infoOverlay').onclick = e => { if (e.target.id === 'infoOverlay') close(); };
+  document.getElementById('infoClose').focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.info) { ui.info = null; modalRoot.innerHTML = ''; } });
 
 // ---- lobi ----
 function renderLobby() {
@@ -426,7 +465,8 @@ function renderGame() {
 // ---- pencereler ----
 function renderModal() {
   modalRoot.innerHTML = '';
-  if (!S || S.phase === 'lobby') return;
+  if (!S) { if (ui.info) renderInfo(); return; }
+  if (S.phase === 'lobby') return;
 
   if (S.phase === 'over') {
     const w = playerById(S.winnerId);
